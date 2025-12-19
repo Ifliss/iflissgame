@@ -1,1 +1,1 @@
-const motsHuitLettres = ["ASTRARIA", "IFLISSOU", "affixaux"];
+const motsHuitLettres = ["ASTRARIA", "IFLISSOU"];

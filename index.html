@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ULTRA WORD MASTER - 8 LETTRES</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    
     <script src="Mots.js"></script>
     <script src="Dictionnaire.js"></script>
+
     <style>
         :root {
             --pink-correct: #ff2d75;
@@ -25,7 +27,7 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             box-sizing: border-box;
             touch-action: manipulation;
         }
@@ -38,7 +40,6 @@
             text-transform: uppercase;
         }
 
-        /* Grille adaptative pour mobile */
         #input-line {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
@@ -56,29 +57,28 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             font-weight: bold;
             text-transform: uppercase;
             transition: all 0.2s;
         }
 
         @media (min-width: 600px) {
-            .tile { font-size: 2.2rem; border-radius: 12px; }
+            .tile { font-size: 2rem; }
             #input-line { gap: 10px; }
         }
 
         .tile.pop { border-color: var(--blue-text); transform: scale(1.05); }
         .tile.correct { background: var(--pink-correct); border-color: transparent; box-shadow: 0 0 15px var(--pink-correct); }
 
-        /* Clavier Virtuel pour Mobile */
         .keyboard {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             width: 100%;
             max-width: 600px;
             margin-top: auto;
-            padding-bottom: 20px;
+            padding-bottom: 10px;
         }
 
         .key-row { display: flex; justify-content: center; gap: 4px; }
@@ -87,52 +87,50 @@
             border: 1px solid var(--glass-border);
             color: white;
             border-radius: 4px;
-            padding: 15px 10px;
-            min-width: 30px;
+            padding: 12px 2px;
             cursor: pointer;
             font-weight: bold;
             flex: 1;
             text-align: center;
             user-select: none;
+            font-size: 0.9rem;
         }
-        .key.wide { flex: 2; background: rgba(255,255,255,0.15); }
+        .key.wide { flex: 1.5; background: rgba(255,255,255,0.15); }
 
-        /* Messages d'erreur */
         #msg-toast {
-            position: fixed; top: 20%; background: var(--pink-correct);
+            position: fixed; top: 15%; background: var(--pink-correct);
             padding: 10px 20px; border-radius: 20px; font-weight: bold;
-            display: none; z-index: 1000; animation: popIn 0.3s;
+            display: none; z-index: 3000;
         }
 
         .misplaced-container {
-            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
-            margin-top: 10px; min-height: 40px;
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+            margin: 10px 0; min-height: 35px;
         }
         .misplaced-letter {
-            width: 35px; height: 35px; background: var(--purple-misplaced);
+            width: 30px; height: 30px; background: var(--purple-misplaced);
             border-radius: 50%; display: flex; justify-content: center; align-items: center;
-            font-size: 0.9rem; font-weight: bold;
+            font-size: 0.8rem; font-weight: bold;
         }
 
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); display: none;
-            flex-direction: column; justify-content: center; align-items: center; z-index: 2000;
+            background: rgba(0,0,0,0.95); display: none;
+            flex-direction: column; justify-content: center; align-items: center; z-index: 4000;
         }
 
-        @keyframes popIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
     </style>
 </head>
 <body>
 
-    <h2 style="margin: 0; font-size: 1.2rem; color: #555;">8 LETTRES</h2>
     <div class="stats" id="attempts-left">ESSAIS : 7</div>
     <div id="msg-toast">MOT INCONNU</div>
     
     <div id="input-line"></div>
 
     <div style="text-align: center;">
-        <p style="font-size: 0.7rem; color: #555; margin-bottom: 5px;">MAL PLACÉES</p>
+        <p style="font-size: 0.6rem; color: #555; margin: 0;">LETTRES MAL PLACÉES</p>
         <div id="misplaced-container" class="misplaced-container"></div>
     </div>
 
@@ -161,15 +159,12 @@
     </div>
 
     <div id="overlay" class="overlay">
-        <h1 id="res-title"></h1>
-        <p id="res-word"></p>
-        <button style="padding: 15px 30px; border-radius: 25px; border: none; background: var(--blue-text); cursor: pointer;" onclick="initGame()">REJOUER</button>
+        <h1 id="res-title" style="font-size: 3rem; margin-bottom: 10px;"></h1>
+        <p id="res-word" style="font-size: 1.2rem; margin-bottom: 30px;"></p>
+        <button style="padding: 15px 40px; border-radius: 30px; border: none; background: var(--blue-text); font-weight: bold; cursor: pointer;" onclick="initGame()">REJOUER</button>
     </div>
 
     <script>
-        // On suppose que Mots.js définit "motsHuitLettres" 
-        // et Dictionnaire.js définit "dictionnaireHuitLettres"
-        
         let targetWord = "";
         let attempts = 7;
         let currentGuess = new Array(8).fill("");
@@ -177,8 +172,10 @@
         let misplacedLetters = new Set();
 
         function initGame() {
-            // Sélection aléatoire dans ta liste de Mots.js
-            targetWord = motsHuitLettres[Math.floor(Math.random() * motsHuitLettres.length)].toUpperCase();
+            // S'assure que les listes sont chargées et en majuscules
+            const sourceMots = motsHuitLettres.map(m => m.toUpperCase());
+            targetWord = sourceMots[Math.floor(Math.random() * sourceMots.length)];
+            
             attempts = 7;
             fixedLetters = new Array(8).fill(null);
             currentGuess = new Array(8).fill("");
@@ -192,20 +189,19 @@
 
         function handleInput(key) {
             if (attempts <= 0) return;
-
             if (key === 'ENTER') {
                 if (!currentGuess.includes("")) checkWord();
-            } else if (key === 'BACKSPACE') {
+            } else if (key === 'BACKSPACE' || key === 'DELETE') {
                 for (let i = 7; i >= 0; i--) {
                     if (!fixedLetters[i] && currentGuess[i] !== "") {
                         currentGuess[i] = "";
                         break;
                     }
                 }
-            } else if (key.length === 1 && /^[A-Z]$/.test(key)) {
+            } else if (key.length === 1 && /^[a-zA-Z]$/.test(key)) {
                 for (let i = 0; i < 8; i++) {
                     if (!fixedLetters[i] && currentGuess[i] === "") {
-                        currentGuess[i] = key;
+                        currentGuess[i] = key.toUpperCase();
                         break;
                     }
                 }
@@ -214,11 +210,13 @@
         }
 
         function checkWord() {
-            const guessStr = currentGuess.join("");
+            const guessStr = currentGuess.join("").toUpperCase();
+            const dictMaj = dictionnaireHuitLettres.map(m => m.toUpperCase());
 
-            // Vérification dans le dictionnaire
-            if (!dictionnaireHuitLettres.includes(guessStr)) {
+            if (!dictMaj.includes(guessStr)) {
                 showToast("MOT INCONNU");
+                document.getElementById('input-line').style.animation = "shake 0.3s ease";
+                setTimeout(() => document.getElementById('input-line').style.animation = "", 300);
                 return;
             }
 
@@ -260,7 +258,6 @@
             setTimeout(() => t.style.display = "none", 1500);
         }
 
-        // ... Reste des fonctions render et clavier physique ...
         function renderLine() {
             const container = document.getElementById('input-line');
             container.innerHTML = "";
@@ -294,10 +291,12 @@
         }
 
         function endGame(win) {
-            const overlay = document.getElementById('overlay');
-            overlay.style.display = "flex";
-            document.getElementById('res-title').innerText = win ? "VICTOIRE" : "DÉFAITE";
-            document.getElementById('res-word').innerText = `LE MOT ÉTAIT : ${targetWord}`;
+            setTimeout(() => {
+                const overlay = document.getElementById('overlay');
+                overlay.style.display = "flex";
+                document.getElementById('res-title').innerText = win ? "VICTOIRE" : "DÉFAITE";
+                document.getElementById('res-word').innerText = `LE MOT ÉTAIT : ${targetWord}`;
+            }, 500);
         }
 
         window.addEventListener('keydown', (e) => handleInput(e.key.toUpperCase()));

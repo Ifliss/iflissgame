@@ -8,120 +8,119 @@
     
     <script src="Mots.js"></script>
     <script src="Dictionnaire.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
         :root {
-            /* Thème par défaut (Cyberpunk/Dark) */
-            --bg-color: #050505;
             --pink-correct: #ff2d75;
             --purple-misplaced: #7f00ff;
-            --blue-accent: #00d4ff;
+            --blue-text: #00d4ff;
             --glass: rgba(255, 255, 255, 0.08);
             --glass-border: rgba(255, 255, 255, 0.2);
-            --text-color: white;
-        }
-
-        /* Thème Pastel */
-        [data-theme="pastel"] {
-            --bg-color: #f0f2f5;
-            --pink-correct: #ffadad;
-            --purple-misplaced: #bdb2ff;
-            --blue-accent: #9bf6ff;
-            --glass: white;
-            --glass-border: #ddd;
-            --text-color: #4a4a4a;
-        }
-
-        /* Thème Néon */
-        [data-theme="neon"] {
-            --bg-color: #000;
-            --pink-correct: #39ff14; /* Vert néon */
-            --purple-misplaced: #bc13fe;
-            --blue-accent: #f5ed00;
-            --text-color: #fff;
         }
 
         body {
-            background: var(--bg-color);
-            color: var(--text-color);
+            background: #050505;
+            color: white;
             font-family: 'Poppins', sans-serif;
-            display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box;
-            transition: background 0.5s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+            touch-action: manipulation;
         }
 
-        /* Sélecteur de thème */
-        .theme-selector {
-            margin-bottom: 10px; display: flex; gap: 5px;
-        }
-        .theme-btn {
-            padding: 5px 10px; font-size: 0.6rem; cursor: pointer; border-radius: 5px;
-            border: 1px solid var(--glass-border); background: var(--glass); color: var(--text-color);
-        }
-
+        /* --- STYLE DES STATISTIQUES --- */
         .stats-container {
-            display: flex; justify-content: space-around; width: 100%; max-width: 500px;
-            background: var(--glass); border: 1px solid var(--glass-border);
-            padding: 10px; border-radius: 15px; margin-bottom: 10px; font-size: 0.7rem;
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 500px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 10px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
         }
-        .stat-box span { display: block; font-size: 1.1rem; font-weight: bold; color: var(--blue-accent); }
+        .stat-box { text-align: center; }
+        .stat-box span { display: block; font-size: 1.1rem; font-weight: bold; color: var(--blue-text); }
+
+        .attempts-display {
+            margin: 10px 0;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            color: var(--pink-correct);
+            font-weight: bold;
+        }
 
         #input-line {
-            display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px;
-            width: 100%; max-width: 500px; margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
         }
 
-        /* --- ANIMATION FLIP --- */
         .tile {
-            aspect-ratio: 1/1; border: 2px solid var(--glass-border); border-radius: 8px;
-            background: var(--glass); display: flex; justify-content: center; align-items: center;
+            aspect-ratio: 1/1;
+            border: 2px solid var(--glass-border);
+            border-radius: 8px;
+            background: var(--glass);
+            display: flex; justify-content: center; align-items: center;
             font-size: 1.2rem; font-weight: bold; text-transform: uppercase;
-            perspective: 1000px;
+            transition: all 0.2s;
         }
 
-        .tile.flip {
-            animation: flipTile 0.6s forwards;
+        @media (min-width: 600px) {
+            .tile { font-size: 2rem; }
+            #input-line { gap: 10px; }
         }
 
-        @keyframes flipTile {
-            0% { transform: rotateX(0); }
-            50% { transform: rotateX(90deg); }
-            100% { transform: rotateX(0); }
+        .tile.pop { border-color: var(--blue-text); transform: scale(1.05); }
+        .tile.correct { background: var(--pink-correct); border-color: transparent; box-shadow: 0 0 15px var(--pink-correct); }
+
+        .keyboard {
+            display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 600px; margin-top: auto; padding-bottom: 10px;
         }
-
-        .tile.correct { background: var(--pink-correct) !important; border-color: transparent; color: white; box-shadow: 0 0 15px var(--pink-correct); }
-        .tile.pop { border-color: var(--blue-accent); transform: scale(1.05); }
-
-        /* Clavier */
-        .keyboard { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 600px; margin-top: auto; }
         .key-row { display: flex; justify-content: center; gap: 4px; }
         .key {
-            background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-color);
-            border-radius: 4px; padding: 15px 2px; cursor: pointer; flex: 1; text-align: center;
-            font-weight: bold; font-size: 0.9rem; transition: transform 0.1s;
+            background: var(--glass); border: 1px solid var(--glass-border); color: white;
+            border-radius: 4px; padding: 15px 2px; cursor: pointer; font-weight: bold;
+            flex: 1; text-align: center; user-select: none; font-size: 0.9rem;
         }
-        .key:active { transform: scale(0.9); }
+        .key.wide { flex: 1.5; background: rgba(255,255,255,0.15); }
 
         #msg-toast {
-            position: fixed; top: 15%; background: var(--pink-correct); color: white;
-            padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 3000;
+            position: fixed; top: 15%; background: var(--pink-correct);
+            padding: 10px 20px; border-radius: 20px; font-weight: bold;
+            display: none; z-index: 3000;
+        }
+
+        .misplaced-container {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+            margin: 10px 0; min-height: 35px;
+        }
+        .misplaced-letter {
+            width: 30px; height: 30px; background: var(--purple-misplaced);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 0.8rem; font-weight: bold;
         }
 
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); display: none; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 4000; color: white;
+            background: rgba(0,0,0,0.95); display: none;
+            flex-direction: column; justify-content: center; align-items: center; z-index: 4000;
         }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
     </style>
 </head>
 <body>
-
-    <div class="theme-selector">
-        <button class="theme-btn" onclick="setTheme('dark')">CYBER</button>
-        <button class="theme-btn" onclick="setTheme('pastel')">PASTEL</button>
-        <button class="theme-btn" onclick="setTheme('neon')">NÉON</button>
-    </div>
 
     <div class="stats-container">
         <div class="stat-box">🏆 Victoires<span id="stat-wins">0</span></div>
@@ -129,14 +128,17 @@
         <div class="stat-box">⚡ One Shot<span id="stat-oneshot">0</span></div>
     </div>
 
-    <div class="attempts-display" id="attempts-left" style="color: var(--pink-correct); font-weight: bold; margin-bottom: 10px;">ESSAIS : 7</div>
+    <div class="attempts-display" id="attempts-left">ESSAIS : 7</div>
     <div id="msg-toast">MOT INCONNU</div>
     
     <div id="input-line"></div>
 
-    <div id="misplaced-container" style="display:flex; gap:5px; min-height:40px;"></div>
+    <div style="text-align: center;">
+        <p style="font-size: 0.6rem; color: #555; margin: 0;">LETTRES MAL PLACÉES</p>
+        <div id="misplaced-container" class="misplaced-container"></div>
+    </div>
 
-    <div class="keyboard">
+    <div class="keyboard" id="keyboard">
         <div class="key-row">
             <div class="key" onclick="handleInput('A')">A</div><div class="key" onclick="handleInput('Z')">Z</div><div class="key" onclick="handleInput('E')">E</div><div class="key" onclick="handleInput('R')">R</div><div class="key" onclick="handleInput('T')">T</div><div class="key" onclick="handleInput('Y')">Y</div><div class="key" onclick="handleInput('U')">U</div><div class="key" onclick="handleInput('I')">I</div><div class="key" onclick="handleInput('O')">O</div><div class="key" onclick="handleInput('P')">P</div>
         </div>
@@ -144,16 +146,16 @@
             <div class="key" onclick="handleInput('Q')">Q</div><div class="key" onclick="handleInput('S')">S</div><div class="key" onclick="handleInput('D')">D</div><div class="key" onclick="handleInput('F')">F</div><div class="key" onclick="handleInput('G')">G</div><div class="key" onclick="handleInput('H')">H</div><div class="key" onclick="handleInput('J')">J</div><div class="key" onclick="handleInput('K')">K</div><div class="key" onclick="handleInput('L')">L</div><div class="key" onclick="handleInput('M')">M</div>
         </div>
         <div class="key-row">
-            <div class="key" onclick="handleInput('BACKSPACE')">⌫</div>
+            <div class="key wide" onclick="handleInput('BACKSPACE')">⌫</div>
             <div class="key" onclick="handleInput('W')">W</div><div class="key" onclick="handleInput('X')">X</div><div class="key" onclick="handleInput('C')">C</div><div class="key" onclick="handleInput('V')">V</div><div class="key" onclick="handleInput('B')">B</div><div class="key" onclick="handleInput('N')">N</div>
-            <div class="key" onclick="handleInput('ENTER')">OK</div>
+            <div class="key wide" onclick="handleInput('ENTER')">OK</div>
         </div>
     </div>
 
     <div id="overlay" class="overlay">
-        <h1 id="res-title"></h1>
-        <p id="res-word"></p>
-        <button style="padding: 15px 30px; border-radius: 20px; border: none; background: var(--blue-accent); cursor:pointer" onclick="initGame()">REJOUER</button>
+        <h1 id="res-title" style="font-size: 3rem; margin-bottom: 10px;"></h1>
+        <p id="res-word" style="font-size: 1.2rem; margin-bottom: 30px;"></p>
+        <button style="padding: 15px 40px; border-radius: 30px; border: none; background: var(--blue-text); font-weight: bold; cursor: pointer;" onclick="initGame()">REJOUER</button>
     </div>
 
     <script>
@@ -161,91 +163,118 @@
         let attempts = 7;
         let currentGuess = new Array(8).fill("");
         let fixedLetters = new Array(8).fill(null);
-        let gameStats = JSON.parse(localStorage.getItem('motusStats')) || { wins: 0, losses: 0, oneshot: 0 };
+        let misplacedLetters = new Set();
 
-        function setTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-            localStorage.setItem('gameTheme', theme);
+        // Stats avec sauvegarde (LocalStorage)
+        let gameStats = JSON.parse(localStorage.getItem('motusStats')) || {
+            wins: 0,
+            losses: 0,
+            oneshot: 0
+        };
+
+        function updateStatDisplay() {
+            document.getElementById('stat-wins').innerText = gameStats.wins;
+            document.getElementById('stat-losses').innerText = gameStats.losses;
+            document.getElementById('stat-oneshot').innerText = gameStats.oneshot;
+            localStorage.setItem('motusStats', JSON.stringify(gameStats));
         }
 
-        // Charger thème sauvegardé
-        setTheme(localStorage.getItem('gameTheme') || 'dark');
-
         function initGame() {
+            // --- C'est ici que ça se passe : Choix depuis Mots.js ---
+            // On utilise la variable 'motsHuitLettres' qui vient de ton fichier Mots.js
             const sourceMots = motsHuitLettres.map(m => m.toUpperCase().trim());
             targetWord = sourceMots[Math.floor(Math.random() * sourceMots.length)];
+            
             attempts = 7;
             fixedLetters = new Array(8).fill(null);
             currentGuess = new Array(8).fill("");
+            misplacedLetters.clear();
+            
             document.getElementById('overlay').style.display = "none";
-            updateDisplay();
+            updateStats();
+            renderLine();
+            renderMisplaced();
+            updateStatDisplay();
         }
 
         function handleInput(key) {
+            if (attempts <= 0) return;
             if (key === 'ENTER') {
                 if (!currentGuess.includes("")) checkWord();
-            } else if (key === 'BACKSPACE') {
+            } else if (key === 'BACKSPACE' || key === 'DELETE') {
                 for (let i = 7; i >= 0; i--) {
                     if (!fixedLetters[i] && currentGuess[i] !== "") {
                         currentGuess[i] = ""; break;
                     }
                 }
-            } else if (/^[A-Z]$/.test(key)) {
+            } else if (key.length === 1 && /^[a-zA-Z]$/.test(key)) {
                 for (let i = 0; i < 8; i++) {
                     if (!fixedLetters[i] && currentGuess[i] === "") {
-                        currentGuess[i] = key; break;
+                        currentGuess[i] = key.toUpperCase(); break;
                     }
                 }
             }
             renderLine();
         }
 
-        async function checkWord() {
-            const guessStr = currentGuess.join("");
+        function checkWord() {
+            const guessStr = currentGuess.join("").toUpperCase();
+            
+            // --- Validation : Vérification dans le Dictionnaire.js ---
+            // On utilise 'dictionnaireHuitLettres' pour valider que le mot existe
             const dictMaj = dictionnaireHuitLettres.map(m => m.toUpperCase().trim());
 
             if (!dictMaj.includes(guessStr)) {
                 showToast("MOT INCONNU");
+                document.getElementById('input-line').style.animation = "shake 0.3s ease";
+                setTimeout(() => document.getElementById('input-line').style.animation = "", 300);
                 return;
             }
 
-            // Animation de flip une par une
-            const tiles = document.querySelectorAll('.tile');
-            for (let i = 0; i < 8; i++) {
-                tiles[i].classList.add('flip');
-                await new Promise(r => setTimeout(r, 100)); // Délai entre chaque lettre
-            }
-
             let win = true;
+            let tempMisplaced = [];
+
             for (let i = 0; i < 8; i++) {
                 if (currentGuess[i] === targetWord[i]) {
                     fixedLetters[i] = currentGuess[i];
+                    misplacedLetters.delete(currentGuess[i]);
                 } else {
                     win = false;
+                    if (targetWord.includes(currentGuess[i])) {
+                        tempMisplaced.push(currentGuess[i]);
+                    }
                     currentGuess[i] = ""; 
                 }
             }
 
+            tempMisplaced.forEach(l => {
+                if (!fixedLetters.includes(l)) misplacedLetters.add(l);
+            });
+
+            renderMisplaced();
+            
             if (win) {
                 gameStats.wins++;
                 if (attempts === 7) gameStats.oneshot++;
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); // 🎉
+                updateStatDisplay();
                 endGame(true);
             } else {
                 attempts--;
-                if (attempts <= 0) endGame(false);
+                updateStats();
+                if (attempts <= 0) {
+                    gameStats.losses++;
+                    updateStatDisplay();
+                    endGame(false);
+                }
             }
-            
-            localStorage.setItem('motusStats', JSON.stringify(gameStats));
-            setTimeout(updateDisplay, 500);
+            renderLine();
         }
 
-        function updateDisplay() {
-            document.getElementById('stat-wins').innerText = gameStats.wins;
-            document.getElementById('stat-losses').innerText = gameStats.losses;
-            document.getElementById('stat-oneshot').innerText = gameStats.oneshot;
-            document.getElementById('attempts-left').innerText = `ESSAIS : ${attempts}`;
-            renderLine();
+        function showToast(text) {
+            const t = document.getElementById('msg-toast');
+            t.innerText = text;
+            t.style.display = "block";
+            setTimeout(() => t.style.display = "none", 1500);
         }
 
         function renderLine() {
@@ -265,17 +294,28 @@
             }
         }
 
-        function showToast(msg) {
-            const t = document.getElementById('msg-toast');
-            t.innerText = msg; t.style.display = "block";
-            setTimeout(() => t.style.display = "none", 1500);
+        function renderMisplaced() {
+            const container = document.getElementById('misplaced-container');
+            container.innerHTML = "";
+            misplacedLetters.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'misplaced-letter';
+                el.innerText = l;
+                container.appendChild(el);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('attempts-left').innerText = `ESSAIS : ${attempts}`;
         }
 
         function endGame(win) {
-            const ov = document.getElementById('overlay');
-            ov.style.display = "flex";
-            document.getElementById('res-title').innerText = win ? "GAGNÉ !" : "PERDU...";
-            document.getElementById('res-word').innerText = `Le mot était : ${targetWord}`;
+            setTimeout(() => {
+                const overlay = document.getElementById('overlay');
+                overlay.style.display = "flex";
+                document.getElementById('res-title').innerText = win ? "VICTOIRE" : "DÉFAITE";
+                document.getElementById('res-word').innerText = `LE MOT ÉTAIT : ${targetWord}`;
+            }, 500);
         }
 
         window.addEventListener('keydown', (e) => handleInput(e.key.toUpperCase()));

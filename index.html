@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ULTRA WORD MASTER - 8 LETTRES</title>
+    <title>IFLISS WORDS GUESS</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     
     <script src="Mots.js"></script>
@@ -32,12 +32,29 @@
             touch-action: manipulation;
         }
 
-        .stats {
-            margin-top: 10px;
+        /* --- NOUVEAU : STYLE DES STATS --- */
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 500px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 10px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+        .stat-box { text-align: center; }
+        .stat-box span { display: block; font-size: 1.1rem; font-weight: bold; color: var(--blue-text); }
+
+        .attempts-display {
+            margin: 10px 0;
             font-size: 0.9rem;
             letter-spacing: 2px;
-            color: var(--blue-text);
-            text-transform: uppercase;
+            color: var(--pink-correct);
+            font-weight: bold;
         }
 
         #input-line {
@@ -46,7 +63,7 @@
             gap: 5px;
             width: 100%;
             max-width: 500px;
-            margin: 20px 0;
+            margin-bottom: 20px;
         }
 
         .tile {
@@ -87,7 +104,7 @@
             border: 1px solid var(--glass-border);
             color: white;
             border-radius: 4px;
-            padding: 12px 2px;
+            padding: 15px 2px;
             cursor: pointer;
             font-weight: bold;
             flex: 1;
@@ -124,7 +141,13 @@
 </head>
 <body>
 
-    <div class="stats" id="attempts-left">ESSAIS : 7</div>
+    <div class="stats-container">
+        <div class="stat-box">🏆 Victoires<span id="stat-wins">0</span></div>
+        <div class="stat-box">💀 Défaites<span id="stat-losses">0</span></div>
+        <div class="stat-box">⚡ One Shot<span id="stat-oneshot">0</span></div>
+    </div>
+
+    <div class="attempts-display" id="attempts-left">ESSAIS : 7</div>
     <div id="msg-toast">MOT INCONNU</div>
     
     <div id="input-line"></div>
@@ -171,8 +194,21 @@
         let fixedLetters = new Array(8).fill(null);
         let misplacedLetters = new Set();
 
+        // --- NOUVEAU : INITIALISATION DES STATS ---
+        let gameStats = JSON.parse(localStorage.getItem('motusStats')) || {
+            wins: 0,
+            losses: 0,
+            oneshot: 0
+        };
+
+        function updateStatDisplay() {
+            document.getElementById('stat-wins').innerText = gameStats.wins;
+            document.getElementById('stat-losses').innerText = gameStats.losses;
+            document.getElementById('stat-oneshot').innerText = gameStats.oneshot;
+            localStorage.setItem('motusStats', JSON.stringify(gameStats));
+        }
+
         function initGame() {
-            // S'assure que les listes sont chargées et en majuscules
             const sourceMots = motsHuitLettres.map(m => m.toUpperCase());
             targetWord = sourceMots[Math.floor(Math.random() * sourceMots.length)];
             
@@ -185,6 +221,7 @@
             updateStats();
             renderLine();
             renderMisplaced();
+            updateStatDisplay(); // Mise à jour visuelle des compteurs
         }
 
         function handleInput(key) {
@@ -241,12 +278,22 @@
             });
 
             renderMisplaced();
+            
             if (win) {
+                // --- LOGIQUE STATS VICTOIRE ---
+                gameStats.wins++;
+                if (attempts === 7) gameStats.oneshot++; // Si gagné au 1er coup
+                updateStatDisplay();
                 endGame(true);
             } else {
                 attempts--;
                 updateStats();
-                if (attempts <= 0) endGame(false);
+                if (attempts <= 0) {
+                    // --- LOGIQUE STATS DÉFAITE ---
+                    gameStats.losses++;
+                    updateStatDisplay();
+                    endGame(false);
+                }
             }
             renderLine();
         }

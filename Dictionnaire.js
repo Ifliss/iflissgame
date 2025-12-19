@@ -1,4 +1,3 @@
-// Petit dictionnaire de test
 const dictionnaireHuitLettres = ["astraria",
 "iflissou",
 "affixaux",

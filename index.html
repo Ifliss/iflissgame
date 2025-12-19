@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ULTRA WORD MASTER - SINGLE LINE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pink-correct: #ff2d75;
+            --purple-misplaced: #7f00ff;
+            --blue-text: #00d4ff;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        body {
+            background: #050505;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .stats {
+            margin-bottom: 20px;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            color: var(--blue-text);
+            text-transform: uppercase;
+        }
+
+        /* Ligne de saisie Unique */
+        #input-line {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 50px;
+        }
+
+        .tile {
+            width: 75px;
+            height: 75px;
+            border: 2px solid var(--glass-border);
+            border-radius: 15px;
+            background: var(--glass);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
+        }
+
+        .tile.pop { transform: scale(1.1); border-color: var(--blue-text); box-shadow: 0 0 20px rgba(0, 212, 255, 0.2); }
+
+        .tile.correct {
+            background-color: var(--pink-correct);
+            border-color: transparent;
+            box-shadow: 0 0 30px var(--pink-correct);
+            animation: win-pop 0.5s ease;
+        }
+
+        /* Zone Lettres Mal Placées */
+        .misplaced-area { text-align: center; }
+        .misplaced-label { color: #555; font-size: 0.8rem; margin-bottom: 10px; letter-spacing: 2px; }
+
+        .misplaced-container {
+            display: flex;
+            gap: 15px;
+            padding: 20px 40px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 50px;
+            min-height: 55px;
+            border: 1px solid var(--glass-border);
+            justify-content: center;
+        }
+
+        .misplaced-letter {
+            width: 55px;
+            height: 55px;
+            background: var(--purple-misplaced);
+            color: var(--blue-text);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.4rem;
+            box-shadow: 0 0 20px var(--purple-misplaced);
+            animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes win-pop { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-15px); } 60% { transform: translateX(15px); } }
+
+        .defeat-screen { animation: shake 0.3s ease 3; background: #1a0000; }
+
+        /* Overlay Fin */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100; backdrop-filter: blur(20px);
+        }
+
+        .btn {
+            margin-top: 30px; padding: 15px 50px; border-radius: 30px;
+            border: none; background: var(--blue-text); color: black;
+            cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.3s;
+        }
+        .btn:hover { transform: scale(1.1); box-shadow: 0 0 20px var(--blue-text); }
+    </style>
+</head>
+<body>
+
+    <div class="stats" id="attempts-left">ESSAIS RESTANTS : 7</div>
+    
+    <div id="input-line"></div>
+
+    <div class="misplaced-area">
+        <p class="misplaced-label">MAL PLACÉES</p>
+        <div id="misplaced-container" class="misplaced-container"></div>
+    </div>
+
+    <div id="overlay" class="overlay">
+        <h1 id="res-title" style="font-size: 4rem; margin: 0;"></h1>
+        <p id="res-word" style="font-size: 1.5rem; opacity: 0.7;"></p>
+        <button class="btn" onclick="initGame()">NOUVEAU MOT</button>
+    </div>
+
+    <script>
+        const words = ["AVION", "ZÈBRE", "IMAGE", "FORÊT", "STADE", "PIANO", "MONDE", "JOUER", "FLEUR", "COEUR", "ORAGE", "VIVRE", "TABLE", "ROUTE", "PHARE", "NUAGE", "LIVRE", "GRAND", "CHAMP", "BRUIT", "ESPRIT", "VALEUR", "SABRE", "GLACE", "BOUGE", "CIBLE", "DROIT", "ECRAN", "FRUIT", "GUIDE", "HOTEL", "JARDIN", "KAYAK", "LAMPE", "METRO", "NIVEAU", "OCEAN", "PORTE", "QUART", "RADIO", "SUCRE", "TRAIN", "USINE", "VAGUE", "WAGON", "YACHT", "ZONES"]; 
+        
+        let targetWord = "";
+        let attempts = 7;
+        let currentGuess = [];
+        let fixedLetters = []; 
+        let misplacedLetters = new Set(); // Utilisation d'un Set pour gérer la persistance
+
+        function initGame() {
+            targetWord = words[Math.floor(Math.random() * words.length)].toUpperCase();
+            attempts = 7;
+            fixedLetters = new Array(targetWord.length).fill(null);
+            currentGuess = new Array(targetWord.length).fill("");
+            misplacedLetters.clear();
+            
+            document.getElementById('overlay').style.display = "none";
+            document.body.classList.remove('defeat-screen');
+            updateStats();
+            renderLine();
+            renderMisplaced();
+        }
+
+        function renderLine() {
+            const container = document.getElementById('input-line');
+            container.innerHTML = "";
+            for (let i = 0; i < targetWord.length; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                if (fixedLetters[i]) {
+                    tile.classList.add('correct');
+                    tile.innerText = fixedLetters[i];
+                } else {
+                    tile.innerText = currentGuess[i] || "";
+                    if (currentGuess[i]) tile.classList.add('pop');
+                }
+                container.appendChild(tile);
+            }
+        }
+
+        function renderMisplaced() {
+            const container = document.getElementById('misplaced-container');
+            container.innerHTML = "";
+            misplacedLetters.forEach(letter => {
+                const el = document.createElement('div');
+                el.className = 'misplaced-letter';
+                el.innerText = letter;
+                container.appendChild(el);
+            });
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (attempts <= 0) return;
+
+            if (e.key === 'Enter') {
+                if (!currentGuess.includes("")) checkWord();
+            } else if (e.key === 'Backspace') {
+                for (let i = currentGuess.length - 1; i >= 0; i--) {
+                    if (!fixedLetters[i] && currentGuess[i] !== "") {
+                        currentGuess[i] = "";
+                        break;
+                    }
+                }
+            } else if (/^[a-zA-ZàâéèêëîïôûùçÀÂÉÈÊËÎÏÔÛÙÇ]$/.test(e.key)) {
+                for (let i = 0; i < currentGuess.length; i++) {
+                    if (!fixedLetters[i] && currentGuess[i] === "") {
+                        currentGuess[i] = e.key.toUpperCase();
+                        break;
+                    }
+                }
+            }
+            renderLine();
+        });
+
+        function checkWord() {
+            let win = true;
+            let tempMisplaced = [];
+
+            for (let i = 0; i < targetWord.length; i++) {
+                if (currentGuess[i] === targetWord[i]) {
+                    fixedLetters[i] = currentGuess[i];
+                    // Si elle était dans les mal placées, on l'enlève
+                    misplacedLetters.delete(currentGuess[i]);
+                } else {
+                    win = false;
+                    if (targetWord.includes(currentGuess[i])) {
+                        tempMisplaced.push(currentGuess[i]);
+                    }
+                    currentGuess[i] = ""; // On efface la case si pas rose
+                }
+            }
+
+            // Ajouter les nouvelles mal placées détectées ce tour
+            tempMisplaced.forEach(l => {
+                // On ne l'ajoute que si elle n'est pas déjà devenue "fixe" (rose) ailleurs
+                if (!fixedLetters.includes(l)) {
+                    misplacedLetters.add(l);
+                }
+            });
+
+            renderMisplaced();
+
+            if (win) {
+                endGame(true);
+            } else {
+                attempts--;
+                updateStats();
+                if (attempts <= 0) endGame(false);
+            }
+            renderLine();
+        }
+
+        function updateStats() {
+            document.getElementById('attempts-left').innerText = `ESSAIS RESTANTS : ${attempts}`;
+        }
+
+        function endGame(win) {
+            setTimeout(() => {
+                const overlay = document.getElementById('overlay');
+                const title = document.getElementById('res-title');
+                overlay.style.display = "flex";
+                if (win) {
+                    title.innerText = "VICTOIRE";
+                    title.style.color = "var(--blue-text)";
+                } else {
+                    document.body.classList.add('defeat-screen');
+                    title.innerText = "DÉFAITE";
+                    title.style.color = "#ff4d4d";
+                }
+                document.getElementById('res-word').innerText = `LE MOT ÉTAIT : ${targetWord}`;
+            }, 600);
+        }
+
+        initGame();
+    </script>
+</body>
+</html>

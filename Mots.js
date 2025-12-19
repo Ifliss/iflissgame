@@ -1,5 +1,5 @@
-const motsHuitLettres = ["ASTRARIA",
-"IFLISSOU",
+const motsHuitLettres = ["astraria",
+"iflissou",
 "affixaux",
 "abkhazes",
 "asphyxia",

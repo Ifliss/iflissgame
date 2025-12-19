@@ -32,7 +32,7 @@
             touch-action: manipulation;
         }
 
-        /* --- STYLE DES STATISTIQUES --- */
+        /* Barre de Stats */
         .stats-bar {
             display: flex;
             justify-content: space-around;
@@ -47,9 +47,9 @@
         .stat-item { text-align: center; font-size: 0.7rem; text-transform: uppercase; }
         .stat-item span { display: block; color: var(--blue-text); font-weight: bold; font-size: 1.1rem; }
 
-        .game-info { text-align: center; margin-bottom: 10px; }
+        .game-header { text-align: center; margin-bottom: 10px; }
         .letter-count { font-size: 0.8rem; color: #555; letter-spacing: 2px; margin: 0; }
-        .attempts-count { font-size: 1rem; color: var(--pink-correct); font-weight: bold; }
+        .attempts-count { font-size: 1rem; color: var(--pink-correct); font-weight: bold; letter-spacing: 2px; }
 
         #input-line {
             display: grid;
@@ -57,7 +57,7 @@
             gap: 5px;
             width: 100%;
             max-width: 500px;
-            margin-bottom: 15px;
+            margin: 15px 0;
         }
 
         .tile {
@@ -66,18 +66,21 @@
             border-radius: 8px;
             background: var(--glass);
             display: flex; justify-content: center; align-items: center;
-            font-size: 1.3rem; font-weight: bold; text-transform: uppercase;
+            font-size: 1.2rem; font-weight: bold; text-transform: uppercase;
+            transition: all 0.2s;
         }
 
+        @media (min-width: 600px) { .tile { font-size: 2rem; } }
+
+        .tile.pop { border-color: var(--blue-text); transform: scale(1.05); }
         .tile.correct { background: var(--pink-correct); border-color: transparent; box-shadow: 0 0 15px var(--pink-correct); }
-        .tile.pop { border-color: var(--blue-text); }
 
         .keyboard { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 600px; margin-top: auto; padding-bottom: 10px; }
         .key-row { display: flex; justify-content: center; gap: 4px; }
         .key {
             background: var(--glass); border: 1px solid var(--glass-border); color: white;
             border-radius: 4px; padding: 15px 2px; cursor: pointer; flex: 1;
-            text-align: center; font-size: 0.9rem; font-weight: bold;
+            text-align: center; font-size: 0.9rem; font-weight: bold; user-select: none;
         }
         .key.wide { flex: 1.5; background: rgba(255,255,255,0.15); }
 
@@ -86,7 +89,7 @@
             padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 3000;
         }
 
-        .misplaced-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 10px; min-height: 35px; }
+        .misplaced-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 10px 0; min-height: 35px; }
         .misplaced-letter {
             width: 30px; height: 30px; background: var(--purple-misplaced);
             border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; font-weight: bold;
@@ -109,7 +112,7 @@
         <div class="stat-item">⚡ ONE SHOT<span id="stat-oneshot">0</span></div>
     </div>
 
-    <div class="game-info">
+    <div class="game-header">
         <p class="letter-count">8 LETTRES</p>
         <div class="attempts-count" id="attempts-left">ESSAIS : 7</div>
     </div>
@@ -118,7 +121,10 @@
     
     <div id="input-line"></div>
 
-    <div id="misplaced-container" class="misplaced-container"></div>
+    <div style="text-align: center;">
+        <p style="font-size: 0.6rem; color: #555; margin: 0;">LETTRES MAL PLACÉES</p>
+        <div id="misplaced-container" class="misplaced-container"></div>
+    </div>
 
     <div class="keyboard" id="keyboard">
         <div class="key-row">
@@ -135,7 +141,7 @@
     </div>
 
     <div id="overlay" class="overlay">
-        <h1 id="res-title" style="font-size: 2.5rem; margin-bottom: 10px;"></h1>
+        <h1 id="res-title" style="font-size: 3rem; margin-bottom: 10px;"></h1>
         <p id="res-word" style="font-size: 1.2rem; margin-bottom: 30px;"></p>
         <button style="padding: 15px 40px; border-radius: 30px; border: none; background: var(--blue-text); font-weight: bold; cursor: pointer;" onclick="initGame()">REJOUER</button>
     </div>
@@ -147,14 +153,13 @@
         let fixedLetters = new Array(8).fill(null);
         let misplacedLetters = new Set();
         
-        // Stats persistantes
-        let stats = JSON.parse(localStorage.getItem('wordStats')) || { wins: 0, losses: 0, oneshots: 0 };
+        // Stats sauvegardées
+        let stats = JSON.parse(localStorage.getItem('wordMasterStats')) || { wins: 0, losses: 0, oneshots: 0 };
 
         function initGame() {
-            // ÉTAPE 1 : CHOISIR LE MOT DANS MOTS.JS
-            // On nettoie les mots (Majuscules + Suppression d'espaces)
-            const listMots = MOTS.map(m => m.toUpperCase().trim());
-            targetWord = listMots[Math.floor(Math.random() * listMots.length)];
+            // PIOCHE DANS MOTS.JS
+            const sourceMots = MOTS.map(m => m.toUpperCase().trim());
+            targetWord = sourceMots[Math.floor(Math.random() * sourceMots.length)];
             
             attempts = 7;
             fixedLetters = new Array(8).fill(null);
@@ -166,9 +171,10 @@
         }
 
         function handleInput(key) {
+            if (attempts <= 0) return;
             if (key === 'ENTER') {
                 if (!currentGuess.includes("")) checkWord();
-            } else if (key === 'BACKSPACE') {
+            } else if (key === 'BACKSPACE' || key === 'DELETE') {
                 for (let i = 7; i >= 0; i--) {
                     if (!fixedLetters[i] && currentGuess[i] !== "") {
                         currentGuess[i] = ""; break;
@@ -186,8 +192,7 @@
 
         function checkWord() {
             const guessStr = currentGuess.join("").toUpperCase();
-            
-            // ÉTAPE 2 : VÉRIFIER DANS LE DICTIONNAIRE COMPLET
+            // VALIDATION DANS DICTIONNAIRE.JS
             const dictMaj = DICTIONNAIRE.map(m => m.toUpperCase().trim());
 
             if (!dictMaj.includes(guessStr)) {
@@ -230,7 +235,7 @@
         }
 
         function saveStats() {
-            localStorage.setItem('wordStats', JSON.stringify(stats));
+            localStorage.setItem('wordMasterStats', JSON.stringify(stats));
         }
 
         function updateDisplay() {

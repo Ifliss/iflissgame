@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ULTRA WORD MASTER - 8 LETTRES</title>
+    <title>ULTRA WORD MASTER</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     
     <script src="Mots.js"></script>
@@ -41,18 +41,30 @@
             border: 1px solid var(--glass-border);
             padding: 10px;
             border-radius: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             font-size: 0.7rem;
         }
         .stat-item { text-align: center; }
         .stat-item span { display: block; color: var(--blue-text); font-weight: bold; font-size: 1.1rem; }
 
-        .attempts-count {
+        .game-header {
+            text-align: center;
             margin-bottom: 10px;
-            font-size: 0.9rem;
+        }
+
+        .letter-count {
+            font-size: 0.8rem;
+            color: #555;
+            margin: 0;
+            letter-spacing: 2px;
+        }
+
+        .attempts-count {
+            font-size: 1rem;
             letter-spacing: 2px;
             color: var(--pink-correct);
             text-transform: uppercase;
+            font-weight: bold;
         }
 
         #input-line {
@@ -71,16 +83,17 @@
             background: var(--glass);
             display: flex; justify-content: center; align-items: center;
             font-size: 1.3rem; font-weight: bold; text-transform: uppercase;
+            transition: all 0.1s;
         }
 
         .tile.correct { background: var(--pink-correct); border-color: transparent; box-shadow: 0 0 15px var(--pink-correct); }
-        .tile.pop { border-color: var(--blue-text); }
+        .tile.pop { border-color: var(--blue-text); transform: scale(1.05); }
 
         .keyboard { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 600px; margin-top: auto; padding-bottom: 10px; }
         .key-row { display: flex; justify-content: center; gap: 4px; }
         .key {
             background: var(--glass); border: 1px solid var(--glass-border); color: white;
-            border-radius: 4px; padding: 15px 2px; cursor: pointer; flex: 1;
+            border-radius: 4px; padding: 18px 2px; cursor: pointer; flex: 1;
             text-align: center; font-size: 0.9rem; font-weight: bold;
         }
         .key.wide { flex: 1.5; background: rgba(255,255,255,0.15); }
@@ -113,7 +126,11 @@
         <div class="stat-item">⚡ ONE SHOT<span id="stat-oneshot">0</span></div>
     </div>
 
-    <div class="attempts-count" id="attempts-left">ESSAIS RESTANTS : 7</div>
+    <div class="game-header">
+        <p class="letter-count">8 LETTRES</p>
+        <div class="attempts-count" id="attempts-left">ESSAIS : 7</div>
+    </div>
+
     <div id="msg-toast">MOT INCONNU</div>
     
     <div id="input-line"></div>
@@ -141,18 +158,17 @@
     </div>
 
     <script>
-        // Initialisation des données
         let targetWord = "";
         let attempts = 7;
         let currentGuess = new Array(8).fill("");
         let fixedLetters = new Array(8).fill(null);
         let misplacedLetters = new Set();
         
-        // Stats sauvegardées dans le navigateur
+        // Récupération des stats (MOTS et DICTIONNAIRE doivent être chargés via Mots.js et Dictionnaire.js)
         let stats = JSON.parse(localStorage.getItem('wordMasterStats')) || { wins: 0, losses: 0, oneshots: 0 };
 
         function initGame() {
-            // Nettoyage des listes
+            // Utilisation directe de MOTS (variable de ton fichier Mots.js)
             const sourceMots = MOTS.map(m => m.toUpperCase().trim());
             targetWord = sourceMots[Math.floor(Math.random() * sourceMots.length)];
             
@@ -162,7 +178,6 @@
             misplacedLetters.clear();
             
             document.getElementById('overlay').style.display = "none";
-            saveStats();
             updateDisplay();
         }
 
@@ -187,6 +202,7 @@
 
         function checkWord() {
             const guessStr = currentGuess.join("").toUpperCase();
+            // Utilisation directe de DICTIONNAIRE (variable de ton fichier Dictionnaire.js)
             const dictMaj = DICTIONNAIRE.map(m => m.toUpperCase().trim());
 
             if (!dictMaj.includes(guessStr)) {
@@ -199,48 +215,37 @@
             let win = true;
             let tempMisplaced = [];
 
-            // 1. On vérifie les lettres bien placées (Rose)
             for (let i = 0; i < 8; i++) {
                 if (currentGuess[i] === targetWord[i]) {
                     fixedLetters[i] = currentGuess[i];
                     misplacedLetters.delete(currentGuess[i]);
                 } else {
                     win = false;
-                    // On garde de côté pour vérifier si mal placé
-                    if (targetWord.includes(currentGuess[i])) {
-                        tempMisplaced.push(currentGuess[i]);
-                    }
-                    currentGuess[i] = ""; // On efface pour le prochain tour
+                    if (targetWord.includes(currentGuess[i])) tempMisplaced.push(currentGuess[i]);
+                    currentGuess[i] = ""; 
                 }
             }
 
-            // 2. On gère les lettres mal placées (Mauve)
-            tempMisplaced.forEach(l => {
-                if (!fixedLetters.includes(l)) misplacedLetters.add(l);
-            });
+            tempMisplaced.forEach(l => { if (!fixedLetters.includes(l)) misplacedLetters.add(l); });
 
             if (win) {
                 stats.wins++;
                 if (attempts === 7) stats.oneshots++;
-                saveStats();
+                localStorage.setItem('wordMasterStats', JSON.stringify(stats));
                 endGame(true);
             } else {
                 attempts--;
                 if (attempts <= 0) {
                     stats.losses++;
-                    saveStats();
+                    localStorage.setItem('wordMasterStats', JSON.stringify(stats));
                     endGame(false);
                 }
             }
             updateDisplay();
         }
 
-        function saveStats() {
-            localStorage.setItem('wordMasterStats', JSON.stringify(stats));
-        }
-
         function updateDisplay() {
-            document.getElementById('attempts-left').innerText = `ESSAIS RESTANTS : ${attempts}`;
+            document.getElementById('attempts-left').innerText = `ESSAIS : ${attempts}`;
             document.getElementById('stat-win').innerText = stats.wins;
             document.getElementById('stat-loss').innerText = stats.losses;
             document.getElementById('stat-oneshot').innerText = stats.oneshots;

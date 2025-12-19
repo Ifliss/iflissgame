@@ -1,6 +1,6 @@
 // Petit dictionnaire de test
-const dictionnaireHuitLettres = ["ASTRARIA",
-"IFLISSOU",
+const dictionnaireHuitLettres = ["astraria",
+"iflissou",
 "affixaux",
 "abkhazes",
 "asphyxia",

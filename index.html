@@ -32,8 +32,8 @@
             touch-action: manipulation;
         }
 
-        /* Barre de Stats */
-        .stats-bar {
+        /* --- STYLE DES STATISTIQUES --- */
+        .stats-container {
             display: flex;
             justify-content: space-around;
             width: 100%;
@@ -43,13 +43,19 @@
             padding: 10px;
             border-radius: 15px;
             margin-bottom: 10px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
         }
-        .stat-item { text-align: center; font-size: 0.7rem; text-transform: uppercase; }
-        .stat-item span { display: block; color: var(--blue-text); font-weight: bold; font-size: 1.1rem; }
+        .stat-box { text-align: center; }
+        .stat-box span { display: block; font-size: 1.1rem; font-weight: bold; color: var(--blue-text); }
 
-        .game-header { text-align: center; margin-bottom: 10px; }
-        .letter-count { font-size: 0.8rem; color: #555; letter-spacing: 2px; margin: 0; }
-        .attempts-count { font-size: 1rem; color: var(--pink-correct); font-weight: bold; letter-spacing: 2px; }
+        .attempts-display {
+            margin: 10px 0;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            color: var(--pink-correct);
+            font-weight: bold;
+        }
 
         #input-line {
             display: grid;
@@ -57,7 +63,7 @@
             gap: 5px;
             width: 100%;
             max-width: 500px;
-            margin: 15px 0;
+            margin-bottom: 20px;
         }
 
         .tile {
@@ -70,29 +76,39 @@
             transition: all 0.2s;
         }
 
-        @media (min-width: 600px) { .tile { font-size: 2rem; } }
+        @media (min-width: 600px) {
+            .tile { font-size: 2rem; }
+            #input-line { gap: 10px; }
+        }
 
         .tile.pop { border-color: var(--blue-text); transform: scale(1.05); }
         .tile.correct { background: var(--pink-correct); border-color: transparent; box-shadow: 0 0 15px var(--pink-correct); }
 
-        .keyboard { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 600px; margin-top: auto; padding-bottom: 10px; }
+        .keyboard {
+            display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 600px; margin-top: auto; padding-bottom: 10px;
+        }
         .key-row { display: flex; justify-content: center; gap: 4px; }
         .key {
             background: var(--glass); border: 1px solid var(--glass-border); color: white;
-            border-radius: 4px; padding: 15px 2px; cursor: pointer; flex: 1;
-            text-align: center; font-size: 0.9rem; font-weight: bold; user-select: none;
+            border-radius: 4px; padding: 15px 2px; cursor: pointer; font-weight: bold;
+            flex: 1; text-align: center; user-select: none; font-size: 0.9rem;
         }
         .key.wide { flex: 1.5; background: rgba(255,255,255,0.15); }
 
         #msg-toast {
             position: fixed; top: 15%; background: var(--pink-correct);
-            padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 3000;
+            padding: 10px 20px; border-radius: 20px; font-weight: bold;
+            display: none; z-index: 3000;
         }
 
-        .misplaced-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 10px 0; min-height: 35px; }
+        .misplaced-container {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+            margin: 10px 0; min-height: 35px;
+        }
         .misplaced-letter {
             width: 30px; height: 30px; background: var(--purple-misplaced);
-            border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; font-weight: bold;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 0.8rem; font-weight: bold;
         }
 
         .overlay {
@@ -106,17 +122,13 @@
 </head>
 <body>
 
-    <div class="stats-bar">
-        <div class="stat-item">🏆 VIC.<span id="stat-win">0</span></div>
-        <div class="stat-item">💀 DÉF.<span id="stat-loss">0</span></div>
-        <div class="stat-item">⚡ ONE SHOT<span id="stat-oneshot">0</span></div>
+    <div class="stats-container">
+        <div class="stat-box">🏆 Victoires<span id="stat-wins">0</span></div>
+        <div class="stat-box">💀 Défaites<span id="stat-losses">0</span></div>
+        <div class="stat-box">⚡ One Shot<span id="stat-oneshot">0</span></div>
     </div>
 
-    <div class="game-header">
-        <p class="letter-count">8 LETTRES</p>
-        <div class="attempts-count" id="attempts-left">ESSAIS : 7</div>
-    </div>
-
+    <div class="attempts-display" id="attempts-left">ESSAIS : 7</div>
     <div id="msg-toast">MOT INCONNU</div>
     
     <div id="input-line"></div>
@@ -152,13 +164,25 @@
         let currentGuess = new Array(8).fill("");
         let fixedLetters = new Array(8).fill(null);
         let misplacedLetters = new Set();
-        
-        // Stats sauvegardées
-        let stats = JSON.parse(localStorage.getItem('wordMasterStats')) || { wins: 0, losses: 0, oneshots: 0 };
+
+        // Stats avec sauvegarde (LocalStorage)
+        let gameStats = JSON.parse(localStorage.getItem('motusStats')) || {
+            wins: 0,
+            losses: 0,
+            oneshot: 0
+        };
+
+        function updateStatDisplay() {
+            document.getElementById('stat-wins').innerText = gameStats.wins;
+            document.getElementById('stat-losses').innerText = gameStats.losses;
+            document.getElementById('stat-oneshot').innerText = gameStats.oneshot;
+            localStorage.setItem('motusStats', JSON.stringify(gameStats));
+        }
 
         function initGame() {
-            // PIOCHE DANS MOTS.JS
-            const sourceMots = MOTS.map(m => m.toUpperCase().trim());
+            // --- C'est ici que ça se passe : Choix depuis Mots.js ---
+            // On utilise la variable 'motsHuitLettres' qui vient de ton fichier Mots.js
+            const sourceMots = motsHuitLettres.map(m => m.toUpperCase().trim());
             targetWord = sourceMots[Math.floor(Math.random() * sourceMots.length)];
             
             attempts = 7;
@@ -167,7 +191,10 @@
             misplacedLetters.clear();
             
             document.getElementById('overlay').style.display = "none";
-            updateDisplay();
+            updateStats();
+            renderLine();
+            renderMisplaced();
+            updateStatDisplay();
         }
 
         function handleInput(key) {
@@ -192,8 +219,10 @@
 
         function checkWord() {
             const guessStr = currentGuess.join("").toUpperCase();
-            // VALIDATION DANS DICTIONNAIRE.JS
-            const dictMaj = DICTIONNAIRE.map(m => m.toUpperCase().trim());
+            
+            // --- Validation : Vérification dans le Dictionnaire.js ---
+            // On utilise 'dictionnaireHuitLettres' pour valider que le mot existe
+            const dictMaj = dictionnaireHuitLettres.map(m => m.toUpperCase().trim());
 
             if (!dictMaj.includes(guessStr)) {
                 showToast("MOT INCONNU");
@@ -211,40 +240,34 @@
                     misplacedLetters.delete(currentGuess[i]);
                 } else {
                     win = false;
-                    if (targetWord.includes(currentGuess[i])) tempMisplaced.push(currentGuess[i]);
+                    if (targetWord.includes(currentGuess[i])) {
+                        tempMisplaced.push(currentGuess[i]);
+                    }
                     currentGuess[i] = ""; 
                 }
             }
 
-            tempMisplaced.forEach(l => { if (!fixedLetters.includes(l)) misplacedLetters.add(l); });
+            tempMisplaced.forEach(l => {
+                if (!fixedLetters.includes(l)) misplacedLetters.add(l);
+            });
 
+            renderMisplaced();
+            
             if (win) {
-                stats.wins++;
-                if (attempts === 7) stats.oneshots++;
-                saveStats();
+                gameStats.wins++;
+                if (attempts === 7) gameStats.oneshot++;
+                updateStatDisplay();
                 endGame(true);
             } else {
                 attempts--;
+                updateStats();
                 if (attempts <= 0) {
-                    stats.losses++;
-                    saveStats();
+                    gameStats.losses++;
+                    updateStatDisplay();
                     endGame(false);
                 }
             }
-            updateDisplay();
-        }
-
-        function saveStats() {
-            localStorage.setItem('wordMasterStats', JSON.stringify(stats));
-        }
-
-        function updateDisplay() {
-            document.getElementById('attempts-left').innerText = `ESSAIS : ${attempts}`;
-            document.getElementById('stat-win').innerText = stats.wins;
-            document.getElementById('stat-loss').innerText = stats.losses;
-            document.getElementById('stat-oneshot').innerText = stats.oneshots;
             renderLine();
-            renderMisplaced();
         }
 
         function showToast(text) {
@@ -280,6 +303,10 @@
                 el.innerText = l;
                 container.appendChild(el);
             });
+        }
+
+        function updateStats() {
+            document.getElementById('attempts-left').innerText = `ESSAIS : ${attempts}`;
         }
 
         function endGame(win) {

@@ -97,4 +97,211 @@
         }
         .key.wide { flex: 2; background: rgba(255,255,255,0.15); }
 
-        /* Messages d
+        /* Messages d'erreur */
+        #msg-toast {
+            position: fixed; top: 20%; background: var(--pink-correct);
+            padding: 10px 20px; border-radius: 20px; font-weight: bold;
+            display: none; z-index: 1000; animation: popIn 0.3s;
+        }
+
+        .misplaced-container {
+            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+            margin-top: 10px; min-height: 40px;
+        }
+        .misplaced-letter {
+            width: 35px; height: 35px; background: var(--purple-misplaced);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 0.9rem; font-weight: bold;
+        }
+
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: none;
+            flex-direction: column; justify-content: center; align-items: center; z-index: 2000;
+        }
+
+        @keyframes popIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <h2 style="margin: 0; font-size: 1.2rem; color: #555;">8 LETTRES</h2>
+    <div class="stats" id="attempts-left">ESSAIS : 7</div>
+    <div id="msg-toast">MOT INCONNU</div>
+    
+    <div id="input-line"></div>
+
+    <div style="text-align: center;">
+        <p style="font-size: 0.7rem; color: #555; margin-bottom: 5px;">MAL PLACÉES</p>
+        <div id="misplaced-container" class="misplaced-container"></div>
+    </div>
+
+    <div class="keyboard" id="keyboard">
+        <div class="key-row">
+            <div class="key" onclick="handleInput('A')">A</div><div class="key" onclick="handleInput('Z')">Z</div>
+            <div class="key" onclick="handleInput('E')">E</div><div class="key" onclick="handleInput('R')">R</div>
+            <div class="key" onclick="handleInput('T')">T</div><div class="key" onclick="handleInput('Y')">Y</div>
+            <div class="key" onclick="handleInput('U')">U</div><div class="key" onclick="handleInput('I')">I</div>
+            <div class="key" onclick="handleInput('O')">O</div><div class="key" onclick="handleInput('P')">P</div>
+        </div>
+        <div class="key-row">
+            <div class="key" onclick="handleInput('Q')">Q</div><div class="key" onclick="handleInput('S')">S</div>
+            <div class="key" onclick="handleInput('D')">D</div><div class="key" onclick="handleInput('F')">F</div>
+            <div class="key" onclick="handleInput('G')">G</div><div class="key" onclick="handleInput('H')">H</div>
+            <div class="key" onclick="handleInput('J')">J</div><div class="key" onclick="handleInput('K')">K</div>
+            <div class="key" onclick="handleInput('L')">L</div><div class="key" onclick="handleInput('M')">M</div>
+        </div>
+        <div class="key-row">
+            <div class="key wide" onclick="handleInput('BACKSPACE')">⌫</div>
+            <div class="key" onclick="handleInput('W')">W</div><div class="key" onclick="handleInput('X')">X</div>
+            <div class="key" onclick="handleInput('C')">C</div><div class="key" onclick="handleInput('V')">V</div>
+            <div class="key" onclick="handleInput('B')">B</div><div class="key" onclick="handleInput('N')">N</div>
+            <div class="key wide" onclick="handleInput('ENTER')">OK</div>
+        </div>
+    </div>
+
+    <div id="overlay" class="overlay">
+        <h1 id="res-title"></h1>
+        <p id="res-word"></p>
+        <button style="padding: 15px 30px; border-radius: 25px; border: none; background: var(--blue-text); cursor: pointer;" onclick="initGame()">REJOUER</button>
+    </div>
+
+    <script>
+        // On suppose que Mots.js définit "motsHuitLettres" 
+        // et Dictionnaire.js définit "dictionnaireHuitLettres"
+        
+        let targetWord = "";
+        let attempts = 7;
+        let currentGuess = new Array(8).fill("");
+        let fixedLetters = new Array(8).fill(null);
+        let misplacedLetters = new Set();
+
+        function initGame() {
+            // Sélection aléatoire dans ta liste de Mots.js
+            targetWord = motsHuitLettres[Math.floor(Math.random() * motsHuitLettres.length)].toUpperCase();
+            attempts = 7;
+            fixedLetters = new Array(8).fill(null);
+            currentGuess = new Array(8).fill("");
+            misplacedLetters.clear();
+            
+            document.getElementById('overlay').style.display = "none";
+            updateStats();
+            renderLine();
+            renderMisplaced();
+        }
+
+        function handleInput(key) {
+            if (attempts <= 0) return;
+
+            if (key === 'ENTER') {
+                if (!currentGuess.includes("")) checkWord();
+            } else if (key === 'BACKSPACE') {
+                for (let i = 7; i >= 0; i--) {
+                    if (!fixedLetters[i] && currentGuess[i] !== "") {
+                        currentGuess[i] = "";
+                        break;
+                    }
+                }
+            } else if (key.length === 1 && /^[A-Z]$/.test(key)) {
+                for (let i = 0; i < 8; i++) {
+                    if (!fixedLetters[i] && currentGuess[i] === "") {
+                        currentGuess[i] = key;
+                        break;
+                    }
+                }
+            }
+            renderLine();
+        }
+
+        function checkWord() {
+            const guessStr = currentGuess.join("");
+
+            // Vérification dans le dictionnaire
+            if (!dictionnaireHuitLettres.includes(guessStr)) {
+                showToast("MOT INCONNU");
+                return;
+            }
+
+            let win = true;
+            let tempMisplaced = [];
+
+            for (let i = 0; i < 8; i++) {
+                if (currentGuess[i] === targetWord[i]) {
+                    fixedLetters[i] = currentGuess[i];
+                    misplacedLetters.delete(currentGuess[i]);
+                } else {
+                    win = false;
+                    if (targetWord.includes(currentGuess[i])) {
+                        tempMisplaced.push(currentGuess[i]);
+                    }
+                    currentGuess[i] = ""; 
+                }
+            }
+
+            tempMisplaced.forEach(l => {
+                if (!fixedLetters.includes(l)) misplacedLetters.add(l);
+            });
+
+            renderMisplaced();
+            if (win) {
+                endGame(true);
+            } else {
+                attempts--;
+                updateStats();
+                if (attempts <= 0) endGame(false);
+            }
+            renderLine();
+        }
+
+        function showToast(text) {
+            const t = document.getElementById('msg-toast');
+            t.innerText = text;
+            t.style.display = "block";
+            setTimeout(() => t.style.display = "none", 1500);
+        }
+
+        // ... Reste des fonctions render et clavier physique ...
+        function renderLine() {
+            const container = document.getElementById('input-line');
+            container.innerHTML = "";
+            for (let i = 0; i < 8; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                if (fixedLetters[i]) {
+                    tile.classList.add('correct');
+                    tile.innerText = fixedLetters[i];
+                } else {
+                    tile.innerText = currentGuess[i];
+                    if (currentGuess[i]) tile.classList.add('pop');
+                }
+                container.appendChild(tile);
+            }
+        }
+
+        function renderMisplaced() {
+            const container = document.getElementById('misplaced-container');
+            container.innerHTML = "";
+            misplacedLetters.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'misplaced-letter';
+                el.innerText = l;
+                container.appendChild(el);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('attempts-left').innerText = `ESSAIS : ${attempts}`;
+        }
+
+        function endGame(win) {
+            const overlay = document.getElementById('overlay');
+            overlay.style.display = "flex";
+            document.getElementById('res-title').innerText = win ? "VICTOIRE" : "DÉFAITE";
+            document.getElementById('res-word').innerText = `LE MOT ÉTAIT : ${targetWord}`;
+        }
+
+        window.addEventListener('keydown', (e) => handleInput(e.key.toUpperCase()));
+        initGame();
+    </script>
+</body>
+</html>
